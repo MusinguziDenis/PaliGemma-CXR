@@ -24,5 +24,4 @@ In the notebook, we illustrate how to convert a HuggingFace object detectiion da
 * Create the prefix token expect by PaliGemma.
 
 ## TODO
-* Create Pytorch Dataset and DataLoader
-* Write Training Code
+* Complete evaluation code
