@@ -14,6 +14,10 @@ from typing import Union, List, Dict
 from model import processor
 import torch
 
+objects = ['Shoulder Endoprosthesis', 'Vascular Port', 'Necklace', 'ICD']
+label2idx = {obj: idx for idx, obj in enumerate(objects)}
+idx2label = {idx: obj for idx, obj in enumerate(objects)}
+
 
 def coco_to_xyxy(batch):
     """
