@@ -20,11 +20,29 @@ device = get_device()
 
 
 def post_process(text):
+    """
+    Remove new line characters from the text. The new line character affects the regex matching
+    """
     text = re.sub('[\n]', ' ', text)
     return text
 
 
-def extract_objects(detection_string, image_width = 224, image_height=224, unique_labels=False):
+def extract_objects(
+        detection_string: str, 
+        image_width:int = 224, 
+        image_height:int=224, 
+        unique_labels:bool=False
+    ):
+    """
+    Exract the predicted objects and their bounding boxes
+    Args:
+        detection_string: str: The string containing the predicted objects
+        image_width: int: The width of the image
+        image_height: int: The height of the image
+        unique_labels: bool: If True, add a prime to the label if it already exists in the list of labels
+    Returns:
+        objects: list: List of dictionaries containing the bounding box and the label of the object
+    """
     objects = []
     seen_labels = set()
 
@@ -56,7 +74,18 @@ def extract_objects(detection_string, image_width = 224, image_height=224, uniqu
     return objects
 
 
-def log_image_bboxes_to_wandb(image, outputs):
+def log_image_bboxes_to_wandb(
+        image: torch.Tensor, 
+        outputs: List[dict]
+        ):
+    """
+    Function to log the image with the bounding boxes to Weights & Biases
+    Args:
+        image: torch.Tensor: The image tensor
+        outputs: List[dict]: List of dictionaries containing the bounding box and the label of the object
+    Returns:
+        img: wandb.Image: The image with the bounding boxes
+    """
     box_data = []
     for output in outputs:
         bbox = output['xyxy']
@@ -100,6 +129,19 @@ def evaluate(model: nn.Module,
              max_samples: int = None,
              processor: AutoProcessor = None
              ):
+    """
+    Function to evaluate the model
+    Args:
+        model: nn.Module: The model to evaluate
+        val_loader: DataLoader: The validation dataloader
+        device: torch.device: The device to run the evaluation on
+        tokenizer: AutoProcessor: The tokenizer to use for decoding the model output
+        step: int: The step number
+        epoch: int: The epoch number
+        log_indices: List[int]: The indices of the samples to log
+        max_samples: int: The maximum number of samples to evaluate
+        processor: AutoProcessor: The tokenizer to use for decoding the model output
+    """
     model.eval()
 
     total_loss = 0
@@ -172,7 +214,9 @@ def evaluate(model: nn.Module,
     model.train()
     return avg_loss
 
-def train(model: nn.Module, 
+
+def train(
+        model: nn.Module, 
         train_dataloader: DataLoader,
         valid_dataloader: DataLoader,
         num_epochs: int, 
@@ -181,11 +225,19 @@ def train(model: nn.Module,
         optimizer: torch.optim.Optimizer,
         log_indices: list = None,
         tokenizer: AutoProcessor = None
-        ):
+    ):
     """
     Function to train the model
-    Parameters:
-    num_epochs: number of epochs for which to train the model
+    Args:
+        model: nn.Module: The model to train
+        train_dataloader: DataLoader: The training dataloader
+        valid_dataloader: DataLoader: The validation dataloader
+        num_epochs: int: The number of epochs to train the model
+        device: torch.device: The device to train the model on
+        train_config: dict: The training configuration
+        optimizer: torch.optim.Optimizer: The optimizer to use for training the model
+        log_indices: list: The indices of the samples to log
+        tokenizer: AutoProcessor: The tokenizer to use for decoding the model output
     """
     model.train()
     best_val_loss = float('inf')
