@@ -155,10 +155,13 @@ class ObjectDetectionDataset(Dataset):
         suffix = sample['suffix']
         return {'image': image, 'prefix': prefix, 'suffix': suffix}
     
-    def collate_fn(self, samples: List[Dict[str, Union[torch.Tensor, str]]])->torch.Tensor:
+    def collate_fn(self, samples: List[Dict[str, Union[torch.Tensor, str]]], train: bool=True)->torch.Tensor:
         images = [sample['image'] for sample in samples]
         prefixes = ['<image> <bos>' + sample['prefix'] for sample in samples]
-        suffixes = [sample['suffix'] for sample in samples]
+        if train:
+            suffixes = [sample['suffix'] for sample in samples]
+        else:
+            suffixes = None
         tokens = processor(images=images, text=prefixes, suffix=suffixes, padding="longest", return_tensors="pt")
 
         return tokens 
