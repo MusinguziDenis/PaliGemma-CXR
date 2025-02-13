@@ -9,7 +9,10 @@ import random
 import pandas as pd
 from IPython.display import display, HTML
 from ast import literal_eval
-from typing import Union, List
+from typing import Union, List, Dict
+
+from model import processor
+import torch
 
 
 def coco_to_xyxy(batch):
@@ -132,3 +135,30 @@ def convert_to_detection_string(batch):
     batch['suffix'] = suffix
 
     return batch
+
+from torch.utils.data import Dataset
+
+
+class ObjectDetectionDataset(Dataset):
+    def __init__(self, dataset: Dataset):
+        super().__init__()
+        self.dataset = dataset
+
+
+    def __len__(self)-> int:
+        return len(self.dataset)
+    
+    def __getitem__(self, idx: int)->Dict[str, Union[torch.Tensor, str]]:
+        sample = self.dataset[idx]
+        image = sample['image']
+        prefix = sample['prefix']
+        suffix = sample['suffix']
+        return {'image': image, 'prefix': prefix, 'suffix': suffix}
+    
+    def collate_fn(self, samples: List[Dict[str, Union[torch.Tensor, str]]])->torch.Tensor:
+        images = [sample['image'] for sample in samples]
+        prefixes = ['<image> <bos>' + sample['prefix'] for sample in samples]
+        suffixes = [sample['suffix'] for sample in samples]
+        tokens = processor(images=images, text=prefixes, suffix=suffixes, padding="longest", return_tensors="pt")
+
+        return tokens 
