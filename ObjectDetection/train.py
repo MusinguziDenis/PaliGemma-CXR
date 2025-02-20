@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
+from torchvision.transforms.functional import resize, to_pil_image
 
 import re
 import wandb
@@ -11,6 +12,8 @@ from typing import List
 from utils import get_device
 
 from pg_datasets import label2idx, idx2label
+from model import processor
+
 
 DETECT_RE = re.compile(
     r"(.*?)" + r"((?:<loc\d{4}>){4})\s*" + r"([^;<>]+) ?(?:; )?",
@@ -308,3 +311,66 @@ def train(
         print(f"Epoch: {epoch}, Average Training Loss: {avg_train_loss}")
     
     wandb.finish()
+
+
+def test(
+        model: nn.Module, 
+        test_loader: DataLoader, 
+        device: torch.device, 
+        tokenizer: AutoProcessor, 
+        step: int, 
+        epoch:int, 
+        log_indices: List[int], 
+        max_samples: int = None
+    )->None:
+    model.eval()
+
+    # Intialize the table for logging to Weights & Biases
+    table = wandb.Table(columns = ['Image','Ground Truth BBOX', "Predicted BBOX"])
+
+    log_images = []
+    log_gt_bbox = []
+    log_pred_bbox = []
+
+    
+    with torch.no_grad():
+        for i, batch in enumerate(test_loader):
+            if max_samples and i >=max_samples:
+                break
+
+            if batch is None:
+                continue
+
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            pixel_values = batch['pixel_values'].to(device)
+            labels = input_ids.clone().detach()
+
+            if i in log_indices:
+                generate_ids = model.generate(**batch, max_new_tokens=50)
+                generated_outputs = processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+                detection_string = generated_outputs.split("\n")[1]
+                objects = extract_objects(detection_string, 224, 224, unique_labels=False)
+                
+                
+                # log_pred_texts.append()
+                log_images.append(pixel_values.cpu().squeeze().float().numpy())
+                
+            
+                # Convert image to PIL format
+                pil_img = to_pil_image(resize(torch.from_numpy(log_images[-1]).squeeze(), (224, 224))).convert("RGB")
+
+                gt_string  = tokenizer.decode(labels[0], skip_special_tokens=True).split("\n")[1]
+                gt_objects = extract_objects(gt_string, 224, 224, unique_labels=False)
+                gt_bbox    = draw_wandb_inference_bbox(pil_img, gt_objects)
+                
+
+                bbox_image = draw_wandb_inference_bbox(pil_img, objects)
+                log_pred_bbox.append(bbox_image)
+                log_gt_bbox.append(gt_bbox)
+                
+
+                # Add data to the table
+                table.add_data(wandb.Image(pil_img), wandb.Image(gt_bbox), wandb.Image(bbox_image))
+            
+    wandb.log({"Evaluation Results epoch {} step {}".format(epoch, step): table, "Epoch": epoch, "Step": step})
