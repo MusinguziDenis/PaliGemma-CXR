@@ -11,6 +11,8 @@ from IPython.display import display, HTML
 from ast import literal_eval
 from typing import Union, List, Dict
 
+from functools import partial
+
 from model import processor
 import torch
 
@@ -148,7 +150,6 @@ class ObjectDetectionDataset(Dataset):
         super().__init__()
         self.dataset = dataset
 
-
     def __len__(self)-> int:
         return len(self.dataset)
     
@@ -168,4 +169,22 @@ class ObjectDetectionDataset(Dataset):
             suffixes = None
         tokens = processor(images=images, text=prefixes, suffix=suffixes, padding="longest", return_tensors="pt")
 
-        return tokens 
+        return tokens
+    
+from torch.utils.data import Dataset, DataLoader
+
+def get_dataloader(
+        dataset: Dataset,
+        batch_size: int = 32,
+        shuffle: bool = True,
+        train: bool = True
+        )->DataLoader:
+    """Get a dataloader for the dataset"""
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        collate_fn=partial(dataset.collate_fn, train=train)
+    )
+    return dataloader
+    

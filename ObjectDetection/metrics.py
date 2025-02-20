@@ -1,5 +1,8 @@
 import numpy as np  
 from typing import Tuple
+from train import extract_objects
+
+from model import processor
 
 
 def mask_iou_batch_split(
@@ -222,4 +225,33 @@ def box_iou_batch(boxes_true: np.ndarray, boxes_detection: np.ndarray) -> np.nda
     ious = np.nan_to_num(ious)
     return ious
 
+def convert_object_eval(objects: list):
+    """
+    Convert the object to the format for evaluation
+    """
+    bbox = []
+    classes = []
+    for object in objects:
+        bbox.append(object['xyxy'])
+        classes.append(label2idx.get(object['name'].lower(), 'wrong'))
+    return np.array(bbox), np.array(classes)
 
+
+def create_eval_object(model, sample):
+    thresholds = np.array([0.5, 0.75])
+    input = sample['input_ids'][sample['token_type_ids']==0][None, :]
+    token_type_ids = sample['token_type_ids'][0][sample['token_type_ids'][0]==0][None, :]
+    pixel_values = sample['pixel_values']
+    attention_mask = sample['attention_mask'][0][sample['token_type_ids'][0]==0][None, :]
+    output = model.generate(input_ids = input, attention_mask = attention_mask, token_type_ids = token_type_ids, pixel_values = pixel_values, max_new_tokens = 50)
+    model_output = processor.batch_decode(output, skip_special_tokens = True)[0]
+    model_objects = extract_objects(model_output)
+    gt_string = processor.decode(sample['input_ids'][0][sample['token_type_ids'][0]==1], skip_special_tokens =True)
+    gt_objects =  extract_objects(gt_string)
+    true_bbox, true_class = convert_object_eval(model_objects)
+    pred_bbox, pred_class = convert_object_eval(gt_objects)
+    ious = box_iou_batch(true_bbox, pred_bbox)
+    matches = match_detection_batch(pred_class, true_class, ious,thresholds)
+    pred_confidence = np.ones(pred_class.shape[0])
+    results = [matches, pred_confidence, pred_class, true_class]
+    return results

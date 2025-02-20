@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt, patches
 from PIL import Image
 from datasets import Dataset
 
+import ast
 import random
 import pandas as pd
 from IPython.display import display, HTML
@@ -103,3 +104,36 @@ def draw_bbox(sample):
         )
     plt.tight_layout()
     plt.show()
+
+
+def recover_bbox(bbox):
+    """Recover the bbox from a string with new line characters"""
+    bbox = re.sub('\n', ',', bbox)
+    bbox = re.sub(' ', ',', bbox)
+    bbox = re.sub(',,', ',', bbox)
+    bbox = re.sub(r'\[,', r'[', bbox)
+    bbox = re.sub(',,', ',', bbox)
+    bbox = ast.literal_eval(bbox)
+    return bbox
+
+
+def draw_wandb_inference_bbox(image, objects):
+    fig, ax = plt.subplots(1)
+    ax.imshow(image)
+    for obj in objects:
+        bbox = obj["xyxy"]
+        name = obj["name"]
+        rect = patches.Rectangle(
+            (bbox[0], bbox[1]),
+            bbox[2] - bbox[0],
+            bbox[3] - bbox[1],
+            linewidth=2,
+            edgecolor="r",
+            facecolor="none",
+        )
+        ax.add_patch(rect)
+        plt.text(
+            bbox[0], bbox[1] - 10, name, color="red", fontsize=12, weight="bold"
+        )
+    
+    return fig

@@ -9,7 +9,7 @@ import wandb
 from transformers import AutoProcessor
 from typing import List
 
-from utils import get_device
+from utils import get_device, draw_wandb_inference_bbox
 
 from pg_datasets import label2idx, idx2label
 from model import processor
