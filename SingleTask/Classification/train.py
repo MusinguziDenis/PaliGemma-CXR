@@ -4,7 +4,7 @@
 import torch
 import wandb
 from torch import nn
-from torch.optim import lr_scheduler
+from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.data import DataLoader
 from torchvision.transforms.functional import resize, to_pil_image
 from transformers import AutoProcessor
@@ -15,7 +15,7 @@ def train(config: dict,
           num_epochs: int,
           train_dataloader: DataLoader,
           valid_dataloader: DataLoader,
-          scheduler: lr_scheduler,
+          scheduler: _LRScheduler,
           device: torch.device,
           optimizer: torch.optim.Optimizer,
           processor: AutoProcessor,

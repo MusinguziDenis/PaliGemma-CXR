@@ -50,7 +50,7 @@ def classification_collate_fn(
         examples: list[dict[str, str]],
         *,
         train: bool,
-    ) -> dict[str, torch.Tensor]:
+    ) -> torch.Tensor:
     """Collate function used by the dataloader to batch the data.
 
     Args:

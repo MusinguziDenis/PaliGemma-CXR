@@ -2,6 +2,7 @@
 
 import random
 from functools import partial
+from typing import TypedDict
 
 import pandas as pd
 import torch
@@ -15,12 +16,23 @@ from utils import get_device
 
 device = get_device()
 
-config = {
+class Config(TypedDict):
+    """Configuration parameters for the training script."""
+
+    model_id: str
+    num_epochs: int
+    num_log_samples: int
+    Optimzer: str
+    scheduler: str
+    lr: float
+
+config: Config = {
     "model_id": "google/paligemma-3b-pt-224",
     "num_epochs": 50,
     "num_log_samples": 10,
     "Optimzer": "AdamW",
     "scheduler" : "CosineAnnealingLR",
+    "lr": 1e-4,
 }
 
 classification_dataset = pd.read_csv("data/image_classification_dataset.csv")
