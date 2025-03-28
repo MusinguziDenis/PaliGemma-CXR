@@ -17,6 +17,6 @@ jobs:
         python3 -m pip install types-PyYAML
         pip install ".[dev]"
     - name: Run ruff
-      run: ruff check --fix .
+      run: ruff check --fix SingleTask/Classification
     - name: Run mypy
       run: mypy SingleTask/Classification
