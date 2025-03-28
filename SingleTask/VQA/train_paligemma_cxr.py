@@ -1,28 +1,29 @@
-from utils import get_device, make_model_deterministic
-import torch
+"""Train and evaluate model and log results to Weights & Biases."""
+
+import random
+from functools import partial
+
 import pandas as pd
-from utils import get_device, make_model_deterministic
-from model import get_model, get_processor
-from train import train
+import torch
+import wandb
 from dataset import VQADataset, vqa_collate_fn
+from model import get_model, get_processor
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
-from functools import partial
-import wandb
-import random
-
+from train import train
+from utils import get_device
 
 device = get_device()
 
 config = {
-    'model_id': "google/paligemma-3b-pt-224",
+    "model_id": "google/paligemma-3b-pt-224",
     "num_epochs": 50,
     "num_log_samples": 10,
     "Optimzer": "AdamW",
-    "scheduler" : "CosineAnnealingLR"
+    "scheduler" : "CosineAnnealingLR",
 }
 
-vqa_dataset = pd.read_csv('../data/kawooya_vqa_datast.csv')
+vqa_dataset = pd.read_csv("../data/kawooya_vqa_datast.csv")
 
 train_df, valid_test_df = train_test_split(vqa_dataset, test_size=0.2)
 valid_df, test_df = train_test_split(valid_test_df, test_size=0.5)
@@ -37,7 +38,7 @@ train_dataloader = DataLoader(
     shuffle =True,
     collate_fn= partial(
         vqa_collate_fn,
-        train = True)
+        train = True),
 )
 
 
@@ -47,7 +48,7 @@ valid_dataloader = DataLoader(
     shuffle    = False,
     collate_fn = partial(
         vqa_collate_fn,
-        train  = True)
+        train  = True),
 )
 
 test_dataloader = DataLoader(
@@ -56,10 +57,13 @@ test_dataloader = DataLoader(
     shuffle    = False,
     collate_fn = partial(
         vqa_collate_fn,
-        train  = False)
+        train  = False),
 )
 
-log_indices = random.sample(range(len(valid_dataset)), config["num_log_samples"])
+log_indices = random.sample(
+    range(len(valid_dataset)),
+    config["num_log_samples"],
+    )
 
 model = get_model(config)
 processor = get_processor(config)
@@ -71,11 +75,22 @@ run = wandb.init(
     name= "PaliGemma Classification FT",
     project= "PaliGemma-CXR",
     reinit=True,
-    config=config
+    config=config,
 )
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_dataloader) * config['num_epochs'])
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+    optimizer,
+    T_max=len(train_dataloader) * config["num_epochs"])
 
-train_loss, valid_loss = train(config, model, config['num_epochs'], train_dataloader, valid_dataloader, scheduler, device, optimizer,
-                               processor, log_indices)
+train_loss, valid_loss = train(
+    config,
+    model,
+    config["num_epochs"],
+    train_dataloader,
+    valid_dataloader,
+    scheduler,
+    device,
+    optimizer,
+    processor,
+    log_indices)
