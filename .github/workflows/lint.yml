@@ -19,4 +19,4 @@ jobs:
     - name: Run ruff
       run: ruff check --fix SingleTask/Classification
     - name: Run mypy
-      run: mypy SingleTask/Classification
+      run: mypy SingleTask/Classification SingleTask/Segmentation SingleTask/VQA 

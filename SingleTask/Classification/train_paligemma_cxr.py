@@ -83,10 +83,10 @@ wandb.login()
 
 # Initialize Weights & Biases run
 run = wandb.init(
-    name= "PaliGemma Classification FT",
-    project= "PaliGemma-CXR",
-    reinit=True,
-    config=config,
+    name = "PaliGemma Classification FT",
+    project = "PaliGemma-CXR",
+    reinit = True,
+    config = config,
 )
 
 optimizer = torch.optim.AdamW(model.parameters(),
@@ -95,12 +95,12 @@ scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
                         T_max=len(train_dataloader) * config["num_epochs"])
 
 train_loss, valid_loss = train(config,
-                                model,
-                                config["num_epochs"],
-                                train_dataloader,
-                                valid_dataloader,
-                                scheduler,
-                                device,
-                                optimizer,
-                               processor,
-                               log_indices)
+                            model,
+                            config["num_epochs"],
+                            train_dataloader,
+                            valid_dataloader,
+                            scheduler,
+                            device,
+                            optimizer,
+                            processor,
+                            log_indices)
